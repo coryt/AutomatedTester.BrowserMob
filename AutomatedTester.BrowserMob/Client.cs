@@ -1,8 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
+using System.Net.Mime;
 using System.Text;
 using System.Web;
+using System.Web.UI;
 using AutomatedTester.BrowserMob.HAR;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -50,7 +54,7 @@ namespace AutomatedTester.BrowserMob
             MakeRequest(String.Format("{0}/{1}/har", _baseUrlProxy, _port), "PUT", reference);
         }
 
-        private static WebResponse MakeRequest(string url, string method, string reference = null)
+        private static WebResponse MakeRequest(string url, string method, string reference = null, string contentType = "application/x-www-form-urlencoded")
         {
             var request = (HttpWebRequest) WebRequest.Create(url);     
             request.Method = method;
@@ -62,8 +66,8 @@ namespace AutomatedTester.BrowserMob
                     requestStream.Write(requestBytes, 0, requestBytes.Length);
                     requestStream.Close();
                 }
-                
-                request.ContentType = "application/x-www-form-urlencoded";
+
+                request.ContentType = contentType;
             }
             else            
                 request.ContentLength = 0;
@@ -115,11 +119,22 @@ namespace AutomatedTester.BrowserMob
         {
             string data = FormatBlackOrWhiteListFormData(regexp, statusCode);
             MakeRequest(String.Format("{0}/{1}/blacklist", _baseUrlProxy, _port), "PUT", data); 
-        }        
+        }
+
+        public void MapHosts(Dictionary<string, string> hostEntry)
+        {
+            string data = FormatMapHostsJsonData(hostEntry);
+            MakeRequest(String.Format("{0}/{1}/hosts", _baseUrlProxy, _port), "POST", data, "application/json");
+        }
 
         private static string FormatBlackOrWhiteListFormData(string regexp, int statusCode)
         {
             return String.Format("regex={0}&status={1}", HttpUtility.UrlEncode(regexp), statusCode);
+        }
+
+        private static string FormatMapHostsJsonData(Dictionary<string,string> hostEntry)
+        {
+            return JsonConvert.SerializeObject(hostEntry);
         }
 
         /// <summary>
